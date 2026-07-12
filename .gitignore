@@ -1,0 +1,14 @@
+# Build artifacts
+Build/
+*.o
+*.out
+
+# Executables
+thread_pool
+a.out
+
+# VSCode
+.vscode/
+
+# Vim
+*.swp
