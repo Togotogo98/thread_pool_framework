@@ -38,6 +38,31 @@ public:
     explicit ThreadPool(size_t num_threads);
 
     ~ThreadPool();
-
-    void SubmitTask(std::function<void()> task);
+    
+    /*
+     * Callable : the type of the function being submitted
+     *           (lambda, function pointer, functor, etc.)
+     * Arguments : the types of whatever extra arguments that
+     *             callable needs when it is eventually invoked
+     * */
+    template<typename Callable, typename... Arguments>
+    void SubmitTask(Callable&& callable, Arguments&&... arguments)
+    {
+        /* 
+         * std::bind packages the callable together with its arguments
+         * into a single object, "boundTask", that takes ZERO arguments
+         * when invoked later. This is required because the task queue
+         * only knows how to store std::function<void()> objects. 
+         * (note: function<void()> is a callable that takes no arguments and returns nothing)
+         *
+         * std::forward preserves whether the original callable/arguments
+         * were temporaries, avoiding unnecessary copies. 
+         */
+        auto task = std::bind(std::forward<Callable>(callable), std::forward<Arguments>(arguments)...);
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            tasks.emplace(task);
+        }
+        condition.notify_one();
+    }
 };

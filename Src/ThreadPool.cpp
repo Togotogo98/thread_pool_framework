@@ -43,12 +43,3 @@ ThreadPool::~ThreadPool()
     for(std::thread &worker: workers)
         worker.join();
 }
-
-void ThreadPool::SubmitTask(std::function<void()> task)
-{
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        tasks.emplace(task);
-    }
-    condition.notify_one();
-}
