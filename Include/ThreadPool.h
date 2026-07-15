@@ -41,6 +41,21 @@ public:
     explicit ThreadPool(size_t num_threads);
 
     ~ThreadPool();
+
+    /* This avoids accidental copying or moving ownership of the ThreadPool.
+     * Copying is disabled because running threads cannot be duplicated
+     * or safely shared between two ThreadPool objects.
+     *
+     * Moving is also disabled because each worker thread captures 'this'
+     * when it is created. After a move, the workers would still reference
+     * the original ThreadPool object, making ownership and synchronization
+     * unsafe.
+     * */
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
+
+    ThreadPool(ThreadPool&&) = delete;
+    ThreadPool& operator=(ThreadPool&&) = delete;
     
     /*
      * Callable : the type of the function being submitted
@@ -58,10 +73,10 @@ public:
         /* std::result_of<Callable(Arguments...)>::type - not using the C++11 version.
          * C++17 version is std::invoke_result_t */
         using ReturnType = std::invoke_result_t<Callable, Arguments...>;
-        /* 
-         * std::bind packages the callable together with its arguments
-         * into a single object "task", that takes ZERO arguments
-         * when invoked later. This is required because the tasks queue
+
+        /* std::bind packs the callable with its arguments
+         * into a single object "task", that takes 0 arguments
+         * when invoked later. This is because the tasks queue
          * only knows how to store std::function<void()> objects. 
          * (note: function<void()> is a callable that takes no arguments and returns nothing
          * hence the need to bind the callable with its arguments into a single object that 
@@ -79,7 +94,7 @@ public:
          * and when the lambda is executed, it will invoke the packaged task.
          * 
          * A packaged task is a wrapper for a callable (like a function or lambda) that
-         * retrieves the result of the callable asynchronously using a future.
+         * gets the result of the callable asynchronously using a future.
          * When packaged task is created, a future gets associated with it.
          * When the packaged task is executed, it runs the callable and sets the result
          * in the future, which can be retrieved later.

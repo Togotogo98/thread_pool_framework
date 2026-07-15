@@ -61,14 +61,29 @@ int main()
     }
 
     //Making this program's life a little more complicated because I'm evil.
+    
     /* Combination of tasks Sum and Multiplier -  Square of sums */
     std::vector<std::future<int>> combinationFutures;
     for (int i = 0; i < 10; i++)
     {
         auto sumFuture = pool.SubmitTask(Sum, i, i + 1);
-        int sumResult = sumFuture.get();
+        int sumResult = sumFuture.get();//thread stuck? - main thread will have to wait here 
+                                        // for the sum to be computed before it can submit the next task.
         auto SquareFuture = pool.SubmitTask(multiplier, sumResult, sumResult);
         combinationFutures.push_back(std::move(SquareFuture));
+    }
+
+    std::vector<std::future<int>> combinationFutures2;
+    for (int i = 0; i < 10; i++)
+    {
+        auto sumFuture2 = pool.SubmitTask([i]()
+                            {
+                                int sum = Sum(i, i + 1);
+
+                                Multiplier multiplier2;
+                                return multiplier2(sum, sum);
+                            });
+        combinationFutures2.push_back(std::move(sumFuture2));
     }
 
     for (size_t i = 0; i < combinationFutures.size(); i++)
@@ -76,6 +91,15 @@ int main()
         int result = combinationFutures[i].get();
         std::lock_guard<std::mutex> lock(print_mutex);
         std::cout << "Combination Result " << i << ": " << result << std::endl;
+    }
+
+    /* Square of sums but as a single task - version 2 
+     * This is to avoid thread waiting to get the result */
+    for (size_t i = 0; i < combinationFutures2.size(); i++)
+    {
+        int result = combinationFutures2[i].get();
+        std::lock_guard<std::mutex> lock(print_mutex);
+        std::cout << "Combination Result 2 " << i << ": " << result << std::endl;
     }
 
     return 0;
