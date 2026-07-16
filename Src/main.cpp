@@ -31,6 +31,7 @@ int main()
     /* Vector to hold futures for the sum tasks */
     std::vector<std::future<int>> sumFutures;
 
+    pool.StartBenchmark();
     /* Submit tasks to the thread pool */
     for (int i = 0; i < 1000; i++)
     {
@@ -52,17 +53,17 @@ int main()
     }*/
 
     Multiplier multiplier;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 400; i++)
     {
         std::future<int> multiplyResultFuture = pool.SubmitTask(multiplier, i, i + 1);
         int result = multiplyResultFuture.get();
-        std::lock_guard<std::mutex> lock(printMutex);
-        std::cout << "Multiplication Result " << i << ": " << result << std::endl;
+        //std::lock_guard<std::mutex> lock(printMutex);
+        //std::cout << "Multiplication Result " << i << ": " << result << std::endl;
     }
 
     /* Combination of tasks Sum and Multiplier -  Square of sums */
     std::vector<std::future<int>> combinationFutures;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1000; i++)
     {
         auto sumFuture = pool.SubmitTask(Sum, i, i + 1);
         int sumResult = sumFuture.get();//thread stuck? - main thread will have to wait here for 
@@ -72,7 +73,7 @@ int main()
     }
 
     std::vector<std::future<int>> combinationFutures2;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1000; i++)
     {
         auto sumFuture2 = pool.SubmitTask([i]()
                             {
@@ -87,8 +88,8 @@ int main()
     for (size_t i = 0; i < combinationFutures.size(); i++)
     {
         int result = combinationFutures[i].get();
-        std::lock_guard<std::mutex> lock(printMutex);
-        std::cout << "Combination Result " << i << ": " << result << std::endl;
+        //std::lock_guard<std::mutex> lock(printMutex);
+        //std::cout << "Combination Result " << i << ": " << result << std::endl;
     }
 
     /* Square of sums but as a single task - version 2 
@@ -96,10 +97,11 @@ int main()
     for (size_t i = 0; i < combinationFutures2.size(); i++)
     {
         int result = combinationFutures2[i].get();
-        std::lock_guard<std::mutex> lock(printMutex);
-        std::cout << "Combination Result 2 " << i << ": " << result << std::endl;
+        //std::lock_guard<std::mutex> lock(printMutex);
+        //std::cout << "Combination Result 2 " << i << ": " << result << std::endl;
     }
 
+    pool.StopBenchmark();
 
     /* Benchmark */
     pool.PrintStats();

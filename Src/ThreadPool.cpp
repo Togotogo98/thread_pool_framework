@@ -1,7 +1,7 @@
 #include "../Include/ThreadPool.h"
 #include <iostream>
 #include <algorithm>
-//#include <numeric>
+#include <numeric>
 
 ThreadPool::ThreadPool(size_t numThreads)
 {
@@ -88,13 +88,23 @@ void ThreadPool::PrintStats() const
         return;
     }
 
+    double benchmarkTime =
+        std::chrono::duration<double>(benchmarkEnd - benchmarkStart).count();
+
     double minLatency =
         *std::min_element(taskLatencies.begin(), taskLatencies.end());
     double maxLatency =
         *std::max_element(taskLatencies.begin(), taskLatencies.end());
+    double totalLatency = 
+        std::accumulate(taskLatencies.begin(), taskLatencies.end(), 0.0);
+    
+    double avgLatency = totalLatency / taskLatencies.size();
 
     std::cout << "\n----- Thread Pool Statistics -----\n";
+
     std::cout << "Completed Tasks : " << completedTasks << '\n';
+    std::cout << "Total Benchmark Time : " << benchmarkTime << " seconds\n";
+    std::cout << "Average Latency : " << avgLatency << " milliseconds\n";
     std::cout << "Minimum Latency : " << minLatency << " milliseconds\n";
     std::cout << "Maximum Latency : " << maxLatency << " milliseconds\n";
 }
