@@ -20,7 +20,7 @@
 #include <future>
 #include <stdexcept>
 #include <memory>
-
+#include <chrono>
 
 class ThreadPool
 {
@@ -30,17 +30,33 @@ private:
 
     std::queue<std::function<void()>> tasks;
 
-    std::mutex queue_mutex;
+    std::mutex queueMutex;
 
     std::condition_variable condition;
 
     bool stop = false;
 
+    /* Performance statistics */
+    std::vector<double> taskLatencies;
+
+    std::mutex statsMutex;
+
+    size_t completedTasks = 0;
+
+    /* Benchmark timing */
+    std::chrono::steady_clock::time_point benchmarkStart;
+    std::chrono::steady_clock::time_point benchmarkEnd;
+
 public:
 
-    explicit ThreadPool(size_t num_threads);
+    explicit ThreadPool(size_t numThreads);
 
     ~ThreadPool();
+
+    void StartBenchmark();
+    void StopBenchmark();
+
+    void PrintStats() const;
 
     /* This avoids accidental copying or moving ownership of the ThreadPool.
      * Copying is disabled because running threads cannot be duplicated
@@ -104,7 +120,7 @@ public:
         std::future<ReturnType> resultFuture = packagedTaskPtr->get_future();
 
         {
-            std::unique_lock<std::mutex> lock(queue_mutex);
+            std::unique_lock<std::mutex> lock(queueMutex);
 
             if (stop)
                 throw std::runtime_error("SubmitTask called on a stopped ThreadPool");

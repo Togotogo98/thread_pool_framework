@@ -1,13 +1,13 @@
 #include "../Include/ThreadPool.h"
 
-ThreadPool::ThreadPool(size_t num_threads)
+ThreadPool::ThreadPool(size_t numThreads)
 {
-    if (num_threads == 0)
+    if (numThreads == 0)
     {
         throw std::invalid_argument("ThreadPool must contain at least one worker thread.");
     }
 
-    for(size_t i = 0; i < num_threads; i++)
+    for(size_t i = 0; i < numThreads; i++)
     {
         workers.emplace_back(
             [this]()
@@ -16,7 +16,7 @@ ThreadPool::ThreadPool(size_t num_threads)
                 {
                     std::function<void()> task;
                     {
-                        std::unique_lock<std::mutex> lock(queue_mutex);
+                        std::unique_lock<std::mutex> lock(queueMutex);
                         condition.wait(lock,
                             [this]
                             { 
@@ -30,7 +30,17 @@ ThreadPool::ThreadPool(size_t num_threads)
                         task = std::move(tasks.front());
                         tasks.pop();
                     }
+                    auto taskStart = std::chrono::steady_clock::now();
                     task();
+                    auto taskEnd = std::chrono::steady_clock::now();
+
+                    double latency =
+                            std::chrono::duration<double, std::milli>(taskEnd - taskStart).count();
+                    {
+                        std::lock_guard<std::mutex> lock(statsMutex);
+                        taskLatencies.push_back(latency);
+                        completedTasks++;
+                    }
                 }
             }
         );
@@ -40,7 +50,7 @@ ThreadPool::ThreadPool(size_t num_threads)
 ThreadPool::~ThreadPool()
 {
     {
-        std::unique_lock<std::mutex> lock(queue_mutex);
+        std::unique_lock<std::mutex> lock(queueMutex);
         stop = true;
     }
     condition.notify_all();
@@ -55,4 +65,19 @@ ThreadPool::~ThreadPool()
             worker.join();
         }
     }
+}
+
+void ThreadPool::StartBenchmark()
+{
+    benchmarkStart = std::chrono::steady_clock::now();
+}
+
+void ThreadPool::StopBenchmark()
+{
+    benchmarkEnd = std::chrono::steady_clock::now();
+}
+
+void ThreadPool::PrintStats() const
+{
+    // print stuff -
 }
