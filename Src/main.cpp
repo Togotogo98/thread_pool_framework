@@ -32,24 +32,24 @@ int main()
     std::vector<std::future<int>> sumFutures;
 
     /* Submit tasks to the thread pool */
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 1000; i++)
     {
         std::future<int> sumResultFuture = pool.SubmitTask(Sum, i, i * 10);
         sumFutures.push_back(std::move(sumResultFuture));
 
-        std::lock_guard<std::mutex> lock(printMutex);
+        /*std::lock_guard<std::mutex> lock(printMutex);
         std::cout << "Submitted task " << i 
                 << " on thread " 
                 << std::this_thread::get_id() 
-                << std::endl;
+                << std::endl;*/
     }
 
-    for (size_t i = 0; i < sumFutures.size(); i++)
+    /*for (size_t i = 0; i < sumFutures.size(); i++)
     {
         int result = sumFutures[i].get();
         std::lock_guard<std::mutex> lock(printMutex);
         std::cout << "Result " << i << ": " << result << std::endl;
-    }
+    }*/
 
     Multiplier multiplier;
     for (int i = 0; i < 4; i++)
@@ -60,8 +60,6 @@ int main()
         std::cout << "Multiplication Result " << i << ": " << result << std::endl;
     }
 
-    //Making this program's life a little more complicated because I'm evil.
-    
     /* Combination of tasks Sum and Multiplier -  Square of sums */
     std::vector<std::future<int>> combinationFutures;
     for (int i = 0; i < 10; i++)
@@ -101,6 +99,10 @@ int main()
         std::lock_guard<std::mutex> lock(printMutex);
         std::cout << "Combination Result 2 " << i << ": " << result << std::endl;
     }
+
+
+    /* Benchmark */
+    pool.PrintStats();
 
     return 0;
 }

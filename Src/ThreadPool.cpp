@@ -1,4 +1,7 @@
 #include "../Include/ThreadPool.h"
+#include <iostream>
+#include <algorithm>
+//#include <numeric>
 
 ThreadPool::ThreadPool(size_t numThreads)
 {
@@ -79,5 +82,19 @@ void ThreadPool::StopBenchmark()
 
 void ThreadPool::PrintStats() const
 {
-    // print stuff -
+    if (taskLatencies.empty())
+    {
+        std::cout << "No benchmark data available." << std::endl;
+        return;
+    }
+
+    double minLatency =
+        *std::min_element(taskLatencies.begin(), taskLatencies.end());
+    double maxLatency =
+        *std::max_element(taskLatencies.begin(), taskLatencies.end());
+
+    std::cout << "\n----- Thread Pool Statistics -----\n";
+    std::cout << "Completed Tasks : " << completedTasks << '\n';
+    std::cout << "Minimum Latency : " << minLatency << " milliseconds\n";
+    std::cout << "Maximum Latency : " << maxLatency << " milliseconds\n";
 }
