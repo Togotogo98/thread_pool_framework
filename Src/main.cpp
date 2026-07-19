@@ -21,6 +21,72 @@ public:
     }
 };
 
+bool IsPrime(int number)
+{
+    if (number < 2)
+        return false;
+
+    for (int i = 2; i * i <= number; i++)
+    {
+        if (number % i == 0)
+            return false;
+    }
+
+    return true;
+}
+
+int CountPrimes(int limit)
+{
+    int count = 0;
+
+    for (int i = 2; i <= limit; i++)
+    {
+        if (IsPrime(i))
+            count++;
+    }
+
+    return count;
+}
+
+void PrintBenchmarkResults( size_t numThreads, 
+                            size_t numTasks, 
+                            const ThreadPool& benchmarkPool)
+{
+    std::cout << "------Benchmark Results:------\n";
+    std::cout << "Number of Threads: " << numThreads << "\n";
+    std::cout << "Number of Tasks: " << numTasks << "\n";
+
+    std::cout << "Task Distribution:\n";
+    for (const auto& entry : benchmarkPool.workerTaskCounts)
+    {
+        std::cout << "Thread ID: " << entry.first 
+                    << " - Tasks Completed: " << entry.second << "\n";
+    }
+}
+
+void RunBenchmark(size_t numThreads, size_t numTasks)
+{
+    ThreadPool benchmarkPool(numThreads);
+    std::vector<std::future<int>> benchmarkFutures;
+    
+    benchmarkPool.StartBenchmark();
+
+    for (size_t i = 0; i < numTasks; i++)
+    {
+        benchmarkFutures.push_back(
+            benchmarkPool.SubmitTask(CountPrimes, 1000));
+    }
+
+    for (auto& future : benchmarkFutures)
+    {
+        future.get();
+    }
+
+    benchmarkPool.StopBenchmark();
+
+    PrintBenchmarkResults(numThreads, numTasks, benchmarkPool);
+    benchmarkPool.PrintStats();
+}
 
 int main()
 {
@@ -31,9 +97,9 @@ int main()
     /* Vector to hold futures for the sum tasks */
     std::vector<std::future<int>> sumFutures;
 
-    pool.StartBenchmark();
+    //pool.StartBenchmark();
     /* Submit tasks to the thread pool */
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 10; i++)
     {
         std::future<int> sumResultFuture = pool.SubmitTask(Sum, i, i * 10);
         sumFutures.push_back(std::move(sumResultFuture));
@@ -53,7 +119,7 @@ int main()
     }*/
 
     Multiplier multiplier;
-    for (int i = 0; i < 400; i++)
+    for (int i = 0; i < 40; i++)
     {
         std::future<int> multiplyResultFuture = pool.SubmitTask(multiplier, i, i + 1);
         int result = multiplyResultFuture.get();
@@ -63,7 +129,7 @@ int main()
 
     /* Combination of tasks Sum and Multiplier -  Square of sums */
     std::vector<std::future<int>> combinationFutures;
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 100; i++)
     {
         auto sumFuture = pool.SubmitTask(Sum, i, i + 1);
         int sumResult = sumFuture.get();//thread stuck? - main thread will have to wait here for 
@@ -73,7 +139,7 @@ int main()
     }
 
     std::vector<std::future<int>> combinationFutures2;
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 100; i++)
     {
         auto sumFuture2 = pool.SubmitTask([i]()
                             {
@@ -101,10 +167,14 @@ int main()
         //std::cout << "Combination Result 2 " << i << ": " << result << std::endl;
     }
 
-    pool.StopBenchmark();
+    //pool.StopBenchmark();
 
     /* Benchmark */
-    pool.PrintStats();
+    //pool.PrintStats();
+
+
+    /* Benchmarking with different number of threads and tasks */
+    RunBenchmark(8, 100000);
 
     return 0;
 }

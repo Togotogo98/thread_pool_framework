@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <memory>
 #include <chrono>
+#include <unordered_map>
 
 class ThreadPool
 {
@@ -52,6 +53,8 @@ public:
     explicit ThreadPool(size_t numThreads);
 
     ~ThreadPool();
+
+    std::unordered_map<std::thread::id, size_t> workerTaskCounts;
 
     void StartBenchmark();
     void StopBenchmark();

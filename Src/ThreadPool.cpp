@@ -44,6 +44,7 @@ ThreadPool::ThreadPool(size_t numThreads)
                         std::lock_guard<std::mutex> lock(statsMutex);
                         taskLatencies.push_back(latency);
                         completedTasks++;
+                        workerTaskCounts[std::this_thread::get_id()]++;
                     }
                 }
             }
