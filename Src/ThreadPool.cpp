@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <numeric>
+#include <iomanip>
 
 ThreadPool::ThreadPool(size_t numThreads)
 {
@@ -103,8 +104,24 @@ void ThreadPool::PrintStats() const
     std::cout << "\n----- Thread Pool Statistics -----\n";
 
     std::cout << "Completed Tasks : " << completedTasks << '\n';
+    //std::cout << std::fixed << std::setprecision(3);
     std::cout << "Total Benchmark Time : " << benchmarkTime << " seconds\n";
     std::cout << "Average Latency : " << avgLatency << " milliseconds\n";
     std::cout << "Minimum Latency : " << minLatency << " milliseconds\n";
     std::cout << "Maximum Latency : " << maxLatency << " milliseconds\n";
+
+    /* 95th Percentile Latency */
+    std::vector<double> sortedLatencies = taskLatencies;
+    std::sort(sortedLatencies.begin(), sortedLatencies.end());
+    size_t percentileIndex =
+        static_cast<size_t>(0.95 * (sortedLatencies.size() - 1));
+    
+    double percentile95 = sortedLatencies[percentileIndex];
+
+    std::cout << "95th Percentile Latency : " << percentile95 << " milliseconds\n";
+
+    /* Throughput */
+    double throughput = completedTasks / benchmarkTime;
+    std::cout << "Throughput : " << throughput << " tasks/second\n";
+
 }
